@@ -6,7 +6,6 @@ import { Section } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Button } from "@/components/ui/button";
 import { SafeImage } from "@/components/ui/safe-image";
-import { images } from "@/lib/images";
 import { siteConfig } from "@/lib/site-config";
 import { Accent } from "@/components/ui/accent";
 import Link from "next/link";
@@ -20,7 +19,7 @@ export default function AboutPage() {
         {/* Hero */}
         <section className="relative min-h-[50vh] flex items-center">
           <SafeImage
-            src={images["about-1"].url}
+            src="/image.jpg"
             alt="About Rigi-X"
             fill
             className="object-cover"
@@ -47,7 +46,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="relative">
                 <SafeImage
-                  src={images["about-2"].url}
+                  src="/image.jpg"
                   alt="Our story"
                   width={600}
                   height={400}
