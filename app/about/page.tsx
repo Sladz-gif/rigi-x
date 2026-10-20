@@ -154,7 +154,7 @@ export default function AboutPage() {
               </div>
               <div>
                 <SafeImage
-                  src={images["team"].url}
+                  src="/image.jpg"
                   alt="The Rigi-X team"
                   width={600}
                   height={400}

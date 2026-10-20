@@ -28,6 +28,11 @@
   box-sizing: border-box;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -47,6 +52,17 @@ main {
 @media (min-width: 768px) {
   main {
     padding-bottom: 100px;
+  }
+}
+
+/* Add padding for fixed header */
+#main-content {
+  scroll-margin-top: 64px;
+}
+
+@media (min-width: 768px) {
+  #main-content {
+    scroll-margin-top: 80px;
   }
 }
 

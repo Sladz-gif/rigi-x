@@ -410,11 +410,14 @@ export default function Home() {
                   </div>
                   <p className="text-muted mb-4">&ldquo;{testimonial.text}&rdquo;</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-mist flex items-center justify-center">
-                      <span className="font-semibold text-ink">
-                        {testimonial.name.charAt(0)}
-                      </span>
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/image.jpg"
+                      alt={testimonial.name}
+                      width={40}
+                      height={40}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
                     <div>
                       <div className="font-medium text-ink">{testimonial.name}</div>
                       {testimonial.location && (
