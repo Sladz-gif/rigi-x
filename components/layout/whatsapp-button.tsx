@@ -4,10 +4,8 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { MessageCircle, ArrowUp } from "lucide-react";
 import { siteConfig } from "@/lib/site-config";
-import { cn } from "@/lib/utils";
 
 export function WhatsAppButton() {
-  const [scrolled, setScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const pathname = usePathname();
 
@@ -16,7 +14,6 @@ export function WhatsAppButton() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 300);
       setShowScrollTop(window.scrollY > 500);
     };
 
@@ -55,18 +52,10 @@ export function WhatsAppButton() {
         )}`}
         target="_blank"
         rel="noopener noreferrer"
-        className={cn(
-          "flex items-center gap-2 rounded-full bg-whatsapp text-white shadow-lg hover:opacity-90 transition-opacity",
-          "md:w-auto md:px-5 md:py-3",
-          "w-14 h-14 justify-center",
-          scrolled && "md:w-14 md:px-0 md:justify-center"
-        )}
+        className="w-14 h-14 rounded-full bg-whatsapp text-white flex items-center justify-center shadow-lg hover:opacity-90 transition-opacity"
         aria-label="Chat on WhatsApp"
       >
-        <MessageCircle className="w-6 h-6 flex-shrink-0" />
-        <span className={cn("font-medium", scrolled && "md:hidden")}>
-          Chat with us
-        </span>
+        <MessageCircle className="w-6 h-6" />
       </a>
     </div>
   );
