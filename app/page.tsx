@@ -27,8 +27,8 @@ export default function Home() {
         {/* Hero */}
         <section className="relative min-h-[85svh] md:min-h-[100svh] flex items-center">
           <SafeImage
-            src={images["hero-1"].url}
-            alt={images["hero-1"].alt}
+            src="/image.jpg"
+            alt="Rigi-X Car Rental"
             fill
             className="object-cover"
             priority
