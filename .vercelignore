@@ -1,0 +1,11 @@
+# Files to ignore in Vercel deployment
+.git
+.gitignore
+.vscode
+.idea
+*.log
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+node_modules/.cache

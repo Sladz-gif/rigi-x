@@ -1,12 +1,12 @@
 # Rigi-X Car Rental Website
 
-A premium car rental website for Rigi-X, built with Next.js 14+, TypeScript, Tailwind CSS, and Framer Motion.
+A premium car rental website for Rigi-X, built with Next.js 16, TypeScript, Tailwind CSS, and Framer Motion.
 
 ## Tech Stack
 
-- **Framework**: Next.js 14+ (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS 4
 - **Icons**: Lucide React
 - **Animations**: Framer Motion
 - **Forms**: React Hook Form + Zod
@@ -39,6 +39,35 @@ npm run dev
 npm run build
 npm start
 ```
+
+## Deployment
+
+### Vercel (Recommended)
+
+This project is optimized for Vercel deployment:
+
+1. **Deploy via Vercel Dashboard:**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New Project"
+   - Import from GitHub (Sladz-gif/rigi-x)
+   - Vercel will auto-detect Next.js settings
+
+2. **Deploy via CLI:**
+```bash
+npm install -g vercel
+vercel login
+vercel
+```
+
+3. **Environment Variables:**
+   - Add `NEXT_PUBLIC_SITE_URL` in Vercel Dashboard
+   - Optional: Add social media URLs, Google Analytics ID
+
+4. **Custom Domain:**
+   - Add your domain in Project Settings > Domains
+   - Follow Vercel's DNS configuration instructions
+
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ### Run Tests
 
