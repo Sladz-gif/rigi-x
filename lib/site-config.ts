@@ -42,6 +42,18 @@ export const siteConfig = {
   // Promo
   promoCode: 'ONLINE15',
   promoDiscount: 15, // percentage
+
+  // Admin
+  // NOTE: change this to move the hidden admin. The folder in app/ must be
+  // renamed to match, and the path updated in robots.ts.
+  adminBasePath: '/rigi-admin',
+
+  // Tax (NOTE: confirm VAT/NHIL/GETFund rules with the client)
+  taxRate: 15, // percentage applied at checkout when enabled in admin settings
+
+  // Payment (demo mode only — no Paystack keys are used)
+  paymentProvider: 'Paystack',
+  checkoutExpiryMinutes: 30,
   
   // Opening hours (NOTE: placeholder - confirm with client)
   openingHours: 'Mon-Sun 7am-9pm',

@@ -122,6 +122,11 @@ export function Footer() {
                   Contact
                 </Link>
               </li>
+              <li>
+                <Link href="/booking/lookup" className="hover:text-brand transition-colors">
+                  Find My Booking
+                </Link>
+              </li>
             </ul>
           </div>
 

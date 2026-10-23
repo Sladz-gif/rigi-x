@@ -16,9 +16,9 @@ import { formatGHS } from "@/lib/utils";
 import { Check } from "lucide-react";
 
 interface CarPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateStaticParams() {
@@ -28,7 +28,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: CarPageProps) {
-  const car = cars.find((c) => c.slug === params.slug);
+  const { slug } = await params;
+  const car = cars.find((c) => c.slug === slug);
   if (!car) return {};
 
   return {
@@ -37,8 +38,9 @@ export async function generateMetadata({ params }: CarPageProps) {
   };
 }
 
-export default function CarPage({ params }: CarPageProps) {
-  const car = cars.find((c) => c.slug === params.slug);
+export default async function CarPage({ params }: CarPageProps) {
+  const { slug } = await params;
+  const car = cars.find((c) => c.slug === slug);
 
   if (!car) {
     notFound();
@@ -198,9 +200,16 @@ export default function CarPage({ params }: CarPageProps) {
               <span className="text-muted text-sm">/ day</span>
             </div>
           </div>
-          <Link href={`/book?car=${car.slug}`} className="flex-1">
-            <Button className="w-full">Book this car</Button>
-          </Link>
+          <div className="flex flex-1 gap-2">
+            <Link href={`/book?car=${car.slug}`} className="flex-1">
+              <Button variant="outline" className="w-full">
+                Book this car
+              </Button>
+            </Link>
+            <Link href={`/checkout?car=${car.slug}`} className="flex-1">
+              <Button className="w-full">Rent this car</Button>
+            </Link>
+          </div>
         </div>
       </div>
     </>

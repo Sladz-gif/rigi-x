@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  name              String
+  brand             String
+  year              Int
+  category          String
+  seats             Int
+  doors             Int
+  transmission      String
+  fuel              String
+  luggage           Int
+  pricePerDay       Int      // Stored in pesewas (GHS * 100)
+  deposit           Int      // Stored in pesewas
+  chauffeurAvailable Boolean
+  selfDriveAvailable Boolean
+  minDays           Int
+  minAge            Int      @default(21)
+  images            String   // JSON array of image keys
+  features          String   // JSON array of features
+  description       String
+  status            String   @default("available") // available, rented, reserved, maintenance
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  bookings          Booking[]
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String
+  phoneAlt      String?
+  dateOfBirth   DateTime
+  nationality   String
+  idType        String
+  idNumber      String
+  licenceNumber String
+  licenceCountry String
+  licenceExpiry DateTime
+  address       String
+  city          String
+  emergencyName String
+  emergencyPhone String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings      Booking[]
+}
+
+model Booking {
+  id                String   @id @default(cuid())
+  reference         String   @unique // RGX-XXXXXX
+  customerId        String
+  vehicleId         String
+  startDate         DateTime
+  endDate           DateTime
+  pickupLocation    String
+  serviceType       String   // self-drive, chauffeur
+  extras            String   // JSON
+  totalAmount       Int      // Stored in pesewas
+  depositAmount     Int      // Stored in pesewas
+  status            String   @default("pending_payment") // pending_payment, confirmed, active, returned, cancelled
+  specialRequests   String?
+  promoCode         String?
+  discountAmount    Int      @default(0) // Stored in pesewas
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  customer          Customer @relation(fields: [customerId], references: [id])
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id])
+  payments          Payment[]
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  bookingId         String
+  reference         String   @unique
+  amount            Int      // Stored in pesewas
+  currency          String   @default("GHS")
+  status            String   @default("initiated") // initiated, success, failed
+  channel           String   // card, mobile_money, bank_transfer, demo
+  metadata          String?  // JSON
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  booking           Booking  @relation(fields: [bookingId], references: [id])
+}

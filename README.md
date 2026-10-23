@@ -1,6 +1,6 @@
 # Rigi-X Car Rental Website
 
-A premium car rental website for Rigi-X, built with Next.js 16, TypeScript, Tailwind CSS, and Framer Motion.
+A premium car rental website for Rigi-X, built with Next.js 16, TypeScript, Tailwind CSS, and Framer Motion — plus a guest checkout flow and a hidden staff admin at `/rigi-admin`.
 
 ## Tech Stack
 
@@ -11,6 +11,7 @@ A premium car rental website for Rigi-X, built with Next.js 16, TypeScript, Tail
 - **Animations**: Framer Motion
 - **Forms**: React Hook Form + Zod
 - **Testing**: Vitest
+- **Data layer**: browser mock API (`lib/mock`) — no server or payment provider required
 
 ## Getting Started
 
@@ -32,6 +33,17 @@ npm run dev
 ```
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### Scripts
+
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | ESLint over the whole repo |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Vitest (unit + integration) |
 
 ### Build for Production
 
@@ -71,10 +83,60 @@ For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ### Run Tests
 
-Note: Tests require resolving a peer dependency conflict. Run with:
 ```bash
-npm test -- --legacy-peer-deps
+npm test
 ```
+
+Unit tests cover pricing and the role/permission map; integration tests cover the full
+checkout lifecycle (initialise → confirm → guest lookup) against the mock API.
+
+## Checkout (demo mode)
+
+Guest checkout runs entirely in the browser — there is **no Paystack account, no API key
+and no server**. The mock API in `lib/mock/api.ts` mirrors the shape of the intended
+endpoints so the real ones can be dropped in later without touching the UI:
+
+| Mock function | Stands in for |
+| --- | --- |
+| `initializeCheckout()` | `POST /api/checkout/initialize` |
+| `confirmCheckoutPayment()` | `GET /api/checkout/verify` + the `charge.success` webhook |
+| `abandonCheckout()` | customer closing the payment popup |
+| `lookupBooking()` | guest booking lookup by reference + email/phone |
+| `validatePromo()` | promo code validation |
+
+Flow:
+
+1. Entry points — **Rent this car** (car page, mobile bar) and **Proceed to Checkout**
+   (booking card) link to `/checkout?car=…&startDate=…&endDate=…&serviceType=…`.
+2. `/checkout` — 3 steps (Details → Review → Payment) with a sticky order summary on
+   desktop and a compact summary bar on mobile. A DEMO MODE banner is always shown.
+3. Payment opens a simulated Paystack popup (card / mobile money / bank transfer) that
+   can be completed or cancelled.
+4. Success → `/checkout/success?ref=…` (add to calendar, download receipt, WhatsApp).
+   Failure/cancel → `/checkout/failed?ref=…` with a retry link.
+5. `/booking/lookup` — guests recover a booking with the reference **and** the email or
+   phone used at checkout; a mismatch returns nothing so references can't be enumerated.
+
+Every confirmation writes a real-looking trail into the mock database: booking →
+confirmed, payment → success, a held deposit, a paid receipt invoice, an email outbox
+row, an audit log entry, and the customer's spend updated.
+
+## Hidden admin (`/rigi-admin`)
+
+An unlisted, `noindex` staff area. The path comes from `siteConfig.adminBasePath` and is
+excluded from `robots.txt` and the sitemap.
+
+- **Sign-in** at `/rigi-admin/login`. Demo accounts are in `lib/mock/auth.ts`
+  (the seeded super admin password is `1234` and forces a change on first login).
+  Five failed attempts lock the account for 15 minutes.
+- **Roles & permissions** — 8 roles (`super_admin`, `admin`, `manager`, `hr`, `finance`,
+  `sales`, `support`, `fleet`) mapped to modules and capabilities in `lib/permissions.ts`.
+  A role only sees the sidebar items it can open.
+- **Layout** — fixed full-height sidebar (260px desktop → 72px tablet rail → mobile
+  drawer), top bar with breadcrumbs, `Ctrl/Cmd+K` search palette, notifications and the
+  account menu.
+- **Modules** — Dashboard, Sales, Customers, Customer Service, Fleet, Maintenance,
+  Inventory, Finance, HR, Marketing, Settings.
 
 ## Project Structure
 
@@ -92,6 +154,16 @@ app/
     page.tsx             # Services overview
     [slug]/page.tsx      # Individual service pages
   book/page.tsx          # Multi-step booking wizard
+  checkout/
+    page.tsx             # 3-step guest checkout (Details → Review → Payment)
+    success/page.tsx     # Booking confirmed + receipt
+    failed/page.tsx      # Payment failed / cancelled + retry
+  booking/lookup/page.tsx  # Guest booking lookup (reference + email/phone)
+  rigi-admin/            # Hidden staff admin (noindex)
+    layout.tsx           # Admin shell (sidebar + top bar)
+    login/page.tsx       # Staff sign-in
+    page.tsx             # Dashboard
+    sales|hr|finance|... page.tsx  # 10 further modules
   about/page.tsx         # About page
   rental-requirements/page.tsx  # Rental requirements
   membership/page.tsx    # Membership tiers
@@ -108,8 +180,15 @@ components/
     section.tsx
     section-heading.tsx
     badge.tsx
+    modal.tsx
+    toast.tsx
     rating.tsx
     safe-image.tsx
+  admin/                 # Admin kit
+    shell.tsx            # Sidebar, top bar, command palette
+    ui.tsx               # DataTable, StatCard, form controls
+    charts.tsx           # Recharts wrappers (lazy loaded)
+    session.tsx          # Admin session guard
   layout/                # Layout components
     header.tsx
     footer.tsx
@@ -134,10 +213,18 @@ data/
   testimonials.ts        # Customer testimonials
 
 lib/
+  mock/                  # Simulated backend (no network)
+    store.ts             # In-browser DB, persisted to localStorage
+    seed.ts              # Deterministic seed data
+    api.ts               # Checkout / booking / search "endpoints"
+    auth.ts              # Mock staff sessions
+    types.ts             # Mock record types
   site-config.ts         # Site-wide configuration
   images.ts              # Centralized Unsplash image URLs
-  pricing.ts             # Price calculation logic
-  pricing.test.ts        # Unit tests for pricing
+  pricing.ts             # Price + checkout total calculation
+  permissions.ts         # Roles, module access, capabilities
+  admin-nav.ts           # Admin sidebar definition
+  csv.ts                 # CSV export helpers
   utils.ts               # Utility functions
 
 types/
@@ -244,19 +331,32 @@ Before going live, review and replace the following placeholders:
 - Fast loading (Lighthouse 90+ target)
 - Searchable and filterable car fleet
 - Multi-step booking wizard with localStorage persistence
+- 3-step guest checkout with sticky order summary and simulated Paystack payment
+- Guest booking lookup by reference + email/phone
+- Calendar (.ics) and receipt downloads on the confirmation page
 - WhatsApp integration for inquiries
-- Dynamic pricing calculation
+- Dynamic pricing calculation (extras, promo codes, VAT, delivery)
 - Lightbox gallery for car images
 - FAQ search and filtering
 - Contact form with validation
 
+### Staff admin (`/rigi-admin`)
+- Unlisted, `noindex`, excluded from robots.txt and the sitemap
+- Separate staff login with lockout and forced first-login password change
+- 8 roles gating 11 modules and 5 capabilities
+- Dashboard, Sales, Customers, Customer Service, Fleet, Maintenance, Inventory,
+  Finance, HR, Marketing and Settings
+- Command palette (`Ctrl/Cmd+K`), notifications, CSV export, audit log
+- Fully responsive: 260px sidebar → 72px rail → mobile drawer
+
 ### Technical
-- Static generation for all pages
-- Server components by default
+- Static generation for all pages (`generateStaticParams` for dynamic routes)
+- Server components by default, client components only where needed
 - Type-safe with TypeScript strict mode
 - SEO optimized (metadata, sitemap, robots.txt)
-- JSON-LD structured data ready
-- No runtime server dependencies
+- No runtime server, API keys or payment-provider dependencies — the mock layer in
+  `lib/mock` stands in for the future backend
+- Unit + integration tests with Vitest
 - Image optimization with next/image
 
 ## Performance Targets
@@ -284,29 +384,19 @@ Copyright © {new Date().getFullYear()} Rigi-X. All rights reserved.
 
 This is a complete, production-quality frontend website for Rigi-X car rental company. The project includes:
 
-### Pages (14 total)
+### Pages (21 public + 12 admin)
 - **Home** (`/`) - Hero with booking search, trust strip, category browse, featured cars, how it works, services preview, stats, why choose us, promo banner, testimonials, FAQ teaser, and CTA
 - **Cars** (`/cars`) - Fleet listing with filters (category, seats, transmission, fuel, price, service), sorting, grid/list toggle, URL-driven state
-- **Car Detail** (`/cars/[slug]`) - Gallery with lightbox, specs, features, rental terms, sticky booking card, similar cars
+- **Car Detail** (`/cars/[slug]`) - Gallery with lightbox, specs, features, rental terms, sticky booking card, mobile "Rent this car" bar, similar cars
 - **Services** (`/services`) - Service overview with cards
 - **Service Detail** (`/services/[slug]`) - What's included, who it's for, how it works, pricing, related cars
 - **Book** (`/book`) - 4-step wizard (trip → car → extras & details → review) with localStorage persistence and WhatsApp/mailto handoff
-- **About** (`/about`) - Story, stats, values, team, CTA
-- **Rental Requirements** (`/rental-requirements`) - Document, age, payment, deposit, fuel, mileage, insurance, cross-region, late returns, cancellations
-- **Membership** (`/membership`) - 3-tier comparison (Silver, Gold, Platinum) with placeholder pricing
-- **FAQs** (`/faqs`) - Search, category tabs, accordion with 15 questions
-- **Contact** (`/contact`) - Contact cards, form with validation, Google Maps embed
-- **Privacy Policy** (`/privacy-policy`) - Placeholder legal content
-- **Terms** (`/terms`) - Placeholder legal content
-- **404** (`not-found.tsx`) - Friendly error page
-
-### Components (30+)
-- **UI**: Button, Container, Section, SectionHeading, Accent, Badge, Rating, SafeImage
-- **Layout**: Header (sticky, mobile drawer), Footer, Logo, WhatsAppButton (floating, scroll-to-top)
-- **Cars**: CarCard, CarFilters, SpecStrip, Gallery (with lightbox)
-- **Booking**: BookingCard (sticky, price calculation)
-- **Forms**: FAQAccordion (accessible)
-- **Sections**: ServiceCard
+- **Checkout** (`/checkout`) - 3-step guest checkout (Details → Review → Payment) with sticky/mobile summaries and a simulated Paystack popup
+- **Checkout Success** (`/checkout/success`) - Confirmation with `.ics` calendar and `.txt` receipt downloads
+- **Checkout Failed** (`/checkout/failed`) - Cancellation/failure page with retry link
+- **Booking Lookup** (`/booking/lookup`) - Guest booking recovery by reference + email/phone
+- **About**, **Rental Requirements**, **Membership**, **FAQs**, **Contact**, **Privacy Policy**, **Terms**, **404**
+- **Admin** (`/rigi-admin`) - Login plus 11 role-gated modules (see the Hidden admin section)
 
 ### Data Files
 - `types/index.ts` - TypeScript interfaces
@@ -314,9 +404,12 @@ This is a complete, production-quality frontend website for Rigi-X car rental co
 - `data/services.ts` - 6 services
 - `data/faqs.ts` - 15 FAQs across 6 categories
 - `data/testimonials.ts` - 6 placeholder reviews
+- `lib/mock/seed.ts` - Deterministic seed for the whole mock database
 - `lib/site-config.ts` - Site-wide configuration
 - `lib/images.ts` - 30+ Unsplash image URLs
-- `lib/pricing.ts` - Price calculation logic with tests
+- `lib/pricing.ts` - Price and checkout total logic (unit tested)
+- `lib/permissions.ts` - Roles, module access, capabilities (unit tested)
+- `lib/mock/api.ts` - Checkout/booking/search endpoints (integration tested)
 
 ### Technical Features
 - Next.js 16.4.2 with App Router
@@ -328,7 +421,7 @@ This is a complete, production-quality frontend website for Rigi-X car rental co
 - Accessible: skip links, ARIA labels, keyboard navigation, focus rings
 - Responsive: mobile-first (360px to 1920px)
 - Performance: next/image optimization, lazy loading, component caching
-- No backend: all data local, forms show success with WhatsApp/mailto
+- No backend: the mock API in `lib/mock` simulates the server, Paystack and email
 
 ### All Placeholders to Replace
 
@@ -366,5 +459,19 @@ This is a complete, production-quality frontend website for Rigi-X car rental co
 
 9. **lib/images.ts**
    - Add photographer credits where known
-   - Verify Unsplash URLs are still valid
+   - Verify all Unsplash URLs are still valid
    - Consider using custom photos for branding
+
+## Going live: replacing the demo layer
+
+Everything the site needs to look and behave "connected" is faked in the browser. To
+switch to a real backend and Paystack:
+
+1. **Staff accounts** - `lib/mock/auth.ts` ships demo logins (super admin password `1234`).
+   Replace with real hashed credentials before the admin is reachable in production.
+2. **Admin URL** - change `siteConfig.adminBasePath` to move the unlisted admin path.
+3. **Checkout endpoints** - swap the bodies of `initializeCheckout`,
+   `confirmCheckoutPayment`, `abandonCheckout`, `lookupBooking` and `validatePromo` in
+   `lib/mock/api.ts` for `fetch('/api/...')` calls; the component code does not change.
+4. **Storage** - `lib/mock/store.ts` persists to `localStorage`; replace with the real
+   database calls. `prisma/schema.prisma` and `prisma/seed.ts` sketch the intended shape.

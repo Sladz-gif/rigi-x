@@ -228,6 +228,22 @@ export function BookingCard({ car }: BookingCardProps) {
       <div className="space-y-3">
         <Button
           onClick={() => {
+            // Navigate to checkout with pre-filled data
+            const params = new URLSearchParams({
+              car: car.slug,
+              startDate: pickupDate,
+              endDate: returnDate,
+              serviceType: serviceType,
+            });
+            router.push(`/checkout?${params.toString()}`);
+          }}
+          disabled={!pickupDate || !returnDate}
+          className="w-full"
+        >
+          Proceed to Checkout
+        </Button>
+        <Button
+          onClick={() => {
             // Navigate to booking wizard with pre-filled data
             const params = new URLSearchParams({
               car: car.slug,
@@ -239,9 +255,10 @@ export function BookingCard({ car }: BookingCardProps) {
             router.push(`/book?${params.toString()}`);
           }}
           disabled={!pickupDate || !returnDate}
+          variant="outline"
           className="w-full"
         >
-          Continue to booking
+          Continue to booking wizard
         </Button>
         <a
           href={`https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(
